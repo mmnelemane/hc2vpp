@@ -1,0 +1,90 @@
+module af_packet {
+
+    yang-version 1;
+    namespace "urn:opendaylight:params:xml:ns:yang:vpp:af_packet";
+    prefix "af_packet";
+
+    description
+        "This YANG module defines the generic configuration and
+        operational data for af_packet in VPP";
+
+    revision "2017-08-10" {
+        description
+            "Initial revision of af_packet model";
+    }
+
+    import ietf-inet-types {
+        prefix inet;
+    }
+
+    identity address-family {
+        description
+            "Base identity from which identities describing address
+            families are derived.";
+    }
+
+    identity ipv4 {
+        base address-family;
+        description
+            "This identity represents IPv4 address family.";
+    }
+
+    identity ipv6 {
+        base address-family;
+        description
+            "This identity represents IPv6 address family.";
+    }
+
+    typedef address-type {
+        type identityref {
+            base address-family;
+        }
+    }
+
+    grouping relay-attributes {
+        list server {
+          key "vrf-id address";
+          leaf address {
+            // FIXME(HC2VPP-79): change to ip-address-no-zone after https://bugs.opendaylight.org/show_bug.cgi?id=6413 is resolved
+            type inet:ip-address;
+            description
+              "IP address of the server DHCP packets will be forwarded to.";
+          }
+          leaf vrf-id {
+            type uint32;
+            description
+              "Used to send DHCP messages to the server";
+          }
+        }
+
+        leaf gateway-address {
+          // FIXME(HC2VPP-79): change to ip-address-no-zone after https://bugs.opendaylight.org/show_bug.cgi?id=6413 is resolved
+          type inet:ip-address;
+            mandatory true;
+            description
+                "IP address of the relay agent.";
+        }
+        // TODO(HC2VPP-44): add configurable circut-id (option-82/remote-id)
+    }
+
+    grouping af_packet-attributes {
+        container relays {
+            list relay {
+                key "address-type rx-vrf-id";
+                leaf address-type {
+                    type address-type;
+                }
+                leaf rx-vrf-id {
+                    type uint32;
+                    description
+                        "Used to receive DHCP messages from clients.";
+                }
+                uses relay-attributes;
+            }
+        }
+    }
+
+    container af_packet {
+        uses af_packet-attributes;
+    }
+}
